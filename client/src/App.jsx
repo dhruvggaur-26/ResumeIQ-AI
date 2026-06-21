@@ -1,7 +1,18 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
+import UploadResume from "./pages/UploadResume";
+import Result from "./pages/Result";
 
 function App() {
-  return <Home />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/upload" element={<UploadResume />} />
+        <Route path="/result" element={<Result />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

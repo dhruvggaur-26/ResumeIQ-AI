@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import Container from "../common/Container";
 import PrimaryButton from "../common/PrimaryButton";
+import { useNavigate } from "react-router-dom";
 const Hero = () => {
+    const navigate = useNavigate();
   return (
+  
     <section className="relative overflow-hidden min-h-screen flex items-center">
       {/* Animated Gradient Blobs */}
       <motion.div
@@ -86,7 +89,7 @@ const Hero = () => {
           <div className="flex flex-wrap gap-4 mt-8">
             
 
-            <PrimaryButton>
+            <PrimaryButton onClick={()=>navigate("/upload")}>
               Upload Resume
             </PrimaryButton>
 
@@ -118,7 +121,7 @@ const Hero = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Resume.pdf</h2>
 
-                <span className="text-green-400 font-bold">
+                <span className="text-blue-400 font-bold">
                   ATS 92%
                 </span>
               </div>

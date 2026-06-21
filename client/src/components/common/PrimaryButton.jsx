@@ -1,6 +1,6 @@
 const PrimaryButton = ({ children, className = "", ...props }) => {
   return (
-    <button
+    <button 
       className={`
         bg-gradient-to-r
         from-violet-600
