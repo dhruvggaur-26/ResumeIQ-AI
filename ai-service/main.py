@@ -55,7 +55,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
     "http://localhost:5173",
-    "https://resumeiq-ai-backend.onrender.com"
+    "https://resume-iq-ai-ecru.vercel.app"
 ],
     allow_credentials=True,
     allow_methods=["*"],
