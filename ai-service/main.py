@@ -134,6 +134,15 @@ def home():
         "message": "ResumeIQ AI Service is running"
     }
 
+@app.get("/check-env")
+def check_env():
+    key = os.getenv("GEMINI_API_KEY")
+
+    return {
+        "key_exists": key is not None,
+        "starts_with_AIzaSy": key.startswith("AIzaSy") if key else False,
+        "key_length": len(key) if key else 0
+    }
 
 # -------------------------
 # Test Gemini
