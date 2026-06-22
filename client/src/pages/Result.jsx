@@ -82,7 +82,7 @@ const handleJobMatch = async () => {
     try {
       setImproveLoading(true);
 
-      const response = await fetch("http://127.0.0.1:8000/improve-resume", {
+      const response = await fetch("https://YOUR-RENDER-URL.onrender.com/improve-resume", {
         method: "POST",
         body: formData,
       });
@@ -102,7 +102,7 @@ const handleJobMatch = async () => {
   const handleDownloadReport = async () => {
   try {
     const response = await fetch(
-      "http://127.0.0.1:8000/generate-report",
+   "https://resumeiq-ai-backend.onrender.com",
       {
         method: "POST",
         headers: {
