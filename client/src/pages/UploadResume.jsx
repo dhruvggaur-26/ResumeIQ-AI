@@ -52,7 +52,7 @@ const UploadResume = () => {
       setLoading(true);
 
       const response = await fetch(
-        "https://resumeiq-ai-backend.onrender.com",
+         "https://resumeiq-ai-backend.onrender.com/analyze-resume",
         {
           method: "POST",
           body: formData,
@@ -61,9 +61,15 @@ const UploadResume = () => {
 
       const data = await response.json();
 
-      console.log("Analysis Result:", data);
+if (!response.ok) {
+  console.error("Backend Error:", data);
+  alert("Backend error while analyzing resume");
+  return;
+}
 
-      navigate("/result", {
+console.log("Analysis Result:", data);
+
+navigate("/result", {
   state: {
     result: data,
     file: file,

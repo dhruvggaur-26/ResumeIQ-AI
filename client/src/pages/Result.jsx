@@ -8,14 +8,22 @@ const Result = () => {
   const result = location.state?.result || location.state;
   const file = location.state?.file;
   const analysis = result?.analysis || {};
-  if (!result) {
+  if (!result || !result.ats_score) {
   return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-3xl font-bold">No Analysis Found</h1>
+
         <p className="text-slate-400 mt-3">
           Please upload a resume first.
         </p>
+
+        <a
+          href="/upload"
+          className="inline-block mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 font-semibold"
+        >
+          Upload Resume
+        </a>
       </div>
     </div>
   );
