@@ -149,10 +149,27 @@ def check_env():
 # -------------------------
 @app.get("/test-ai")
 def test_ai():
-    response = model.generate_content("Say hello in one sentence.")
-    return {
-        "response": response.text
-    }
+    try:
+        key = os.getenv("GEMINI_API_KEY")
+
+        if not key:
+            return {
+                "success": False,
+                "error": "GEMINI_API_KEY not found in environment"
+            }
+
+        response = model.generate_content("Say hello in one sentence.")
+
+        return {
+            "success": True,
+            "response": response.text
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 
 # -------------------------
