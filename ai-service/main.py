@@ -713,12 +713,25 @@ Job Description:
 """
 
         try:
-            return generate_gemini_json_with_retry(prompt)
+             jd_result = generate_gemini_json_with_retry(prompt)
+             jd_result["source"] = "gemini"
+             return jd_result
 
         except Exception as gemini_error:
             print("JD Match Gemini Error:", gemini_error)
+            fallback_result = {
+                    "match_score": 0,
+                    "matching_skills": [],
+                    "missing_keywords": [],
+                    "improvement_tips": [
+                    "Could not generate AI-based job description match. Please try again."
+                    ],
+                    "source": f"fallback_due_to_error: {str(gemini_error)}"
+    }
 
-            return rule_based_jd_match(resume_text, job_description)
+
+
+            return fallback_result
             
 
     except Exception as error:
