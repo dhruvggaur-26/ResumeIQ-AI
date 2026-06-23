@@ -334,8 +334,12 @@ async def improve_resume(file: UploadFile = File(...)):
 
         if not text:
             return {
-                "success": False,
-                "error": "Could not extract text from PDF"
+                "overall_feedback": "Could not extract text from PDF.",
+                "improved_bullets": [],
+                "ats_improvements": [],
+                "suggestions": [
+                    "Please upload a text-based PDF resume instead of a scanned image PDF."
+                ]
             }
 
         prompt = f"""
@@ -370,23 +374,42 @@ Resume:
 """
 
         try:
-            return generate_gemini_json(prompt)
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt
+            )
+
+            raw_text = response.text if response.text else ""
+            cleaned = raw_text.replace("```json", "").replace("```", "").strip()
+
+            return json.loads(cleaned)
 
         except Exception as gemini_error:
             print("Improve Resume Gemini Error:", gemini_error)
 
             return {
-                "overall_feedback": "Your resume has a good foundation, but it can be improved with stronger action verbs, measurable results, and clearer ATS keywords.",
-                "improved_bullets": [],
+                "overall_feedback": "Gemini is temporarily busy, but ResumeIQ generated fallback improvement guidance based on ATS best practices.",
+                "improved_bullets": [
+                    {
+                        "original": "Built projects using web technologies.",
+                        "improved": "Developed full-stack web applications using React, FastAPI, and AI APIs to deliver resume analysis, ATS scoring, and job-matching features."
+                    },
+                    {
+                        "original": "Worked on resume analysis project.",
+                        "improved": "Implemented an AI-powered resume analysis workflow that extracts PDF text, calculates ATS scores, detects missing skills, and generates personalized improvement suggestions."
+                    }
+                ],
                 "ats_improvements": [
-                    "Add measurable impact wherever possible.",
-                    "Use role-specific keywords from the job description.",
-                    "Improve consistency in formatting and section headings."
+                    "Add measurable results such as percentages, counts, or performance improvements.",
+                    "Use job-specific keywords from the target job description.",
+                    "Mention deployment, testing, cloud, and database tools where relevant.",
+                    "Keep section headings ATS-friendly such as Skills, Projects, Experience, and Education."
                 ],
                 "suggestions": [
-                    "Use action verbs like Developed, Built, Implemented, Optimized, and Designed.",
-                    "Mention tools, technologies, and outcomes clearly.",
-                    "Add cloud, testing, and deployment skills if applicable."
+                    "Start bullet points with strong action verbs like Built, Developed, Implemented, Optimized, or Designed.",
+                    "Avoid vague lines and show clear impact.",
+                    "Add technical keywords naturally inside project and experience descriptions.",
+                    "Keep formatting simple and consistent for ATS readability."
                 ]
             }
 
@@ -394,8 +417,12 @@ Resume:
         print("Improve Resume Error:", error)
 
         return {
-            "success": False,
-            "error": str(error)
+            "overall_feedback": "Something went wrong while improving the resume.",
+            "improved_bullets": [],
+            "ats_improvements": [],
+            "suggestions": [
+                str(error)
+            ]
         }
 
 
