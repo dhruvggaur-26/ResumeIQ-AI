@@ -8,7 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+client/node_modules/
 dist
+client/dist/
 dist-ssr
 *.local
 
@@ -28,7 +30,9 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+ai-service/__pycache__/
 
 # Environment variables
 .env
 .env.local
+ai-service/.env
