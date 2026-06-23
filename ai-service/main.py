@@ -44,7 +44,7 @@ ROLE_SKILLS = {
 load_dotenv()
 
 # Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY", "").strip())
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
@@ -150,8 +150,8 @@ def check_env():
 @app.get("/test-ai")
 def test_ai():
     try:
-        key = os.getenv("GEMINI_API_KEY")
-
+        key = os.getenv("GEMINI_API_KEY","").strip()
+        genai.configure(api_key=key)
         if not key:
             return {
                 "success": False,
