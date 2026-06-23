@@ -78,34 +78,43 @@ const handleJobMatch = async () => {
 
 
 
-  const handleImproveResume = async () => {
-    if (!file) {
-      alert("Resume file not found. Please upload again.");
+ const handleImproveResume = async () => {
+  if (!file) {
+    alert("Resume file not found. Please upload again.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    setImproveLoading(true);
+
+    const response = await fetch(
+      "https://resumeiq-ai-backend.onrender.com/improve-resume",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("Improve Resume Response:", data);
+
+    if (!response.ok || data.success === false) {
+      alert(data.error || "Backend error while improving resume");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      setImproveLoading(true);
-
-      const response = await fetch("https://YOUR-RENDER-URL.onrender.com/improve-resume", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      console.log("Improve Result:", data);
-
-      setImproveData(data);
-    } catch (error) {
-      console.error(error);
-      alert("Failed to improve resume");
-    } finally {
-      setImproveLoading(false);
-    }
-  };
+    setImproveData(data);
+  } catch (error) {
+    console.error("Improve Resume Error:", error);
+    alert("Failed to improve resume. Check console for details.");
+  } finally {
+    setImproveLoading(false);
+  }
+};
 
   const handleDownloadReport = async () => {
   try {
