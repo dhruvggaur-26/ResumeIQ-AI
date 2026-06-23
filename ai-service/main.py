@@ -459,7 +459,63 @@ Resume:
             "success": False,
             "error": str(error)
         }
+def clean_jd_match_result(result: dict):
+    non_technical_words = [
+        "₹", "salary", "pay", "per month",
+        "paid sick", "paid time", "provident fund", "benefit",
+        "work from home", "noida", "location", "in person",
+        "immediate", "immediately", "available", "availability",
+        "4+ years", "years of experience", "experience",
+        "job type", "full-time", "night shift"
+    ]
 
+    def is_non_technical(item):
+        item_lower = str(item).lower()
+        return any(word in item_lower for word in non_technical_words)
+
+    def clean_list(items):
+        cleaned = []
+        seen = set()
+
+        for item in items:
+            item = str(item).strip()
+
+            if not item:
+                continue
+
+            if is_non_technical(item):
+                continue
+
+            key = item.lower()
+
+            if key not in seen:
+                cleaned.append(item)
+                seen.add(key)
+
+        return cleaned
+
+    result["matching_skills"] = clean_list(result.get("matching_skills", []))
+    result["missing_keywords"] = clean_list(result.get("missing_keywords", []))
+
+    tips = result.get("improvement_tips", [])
+    cleaned_tips = []
+
+    for tip in tips:
+        tip_text = str(tip).strip()
+
+        if not tip_text:
+            continue
+
+        tip_lower = tip_text.lower()
+
+        if "₹" in tip_lower or "salary" in tip_lower or "provident fund" in tip_lower:
+            continue
+
+        cleaned_tips.append(tip_text)
+
+    result["improvement_tips"] = cleaned_tips[:6]
+
+    return result
 
 # -------------------------
 # Improve Resume
@@ -714,7 +770,9 @@ Job Description:
 
         try:
              jd_result = generate_gemini_json_with_retry(prompt)
-             jd_result["source"] = "gemini"
+             jd_result = clean_jd_match_result(jd_result)
+             jd_result["source"] = "gemini_cleaned"
+             
              return jd_result
 
         except Exception as gemini_error:
