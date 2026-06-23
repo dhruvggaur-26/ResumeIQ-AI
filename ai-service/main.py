@@ -363,24 +363,25 @@ Format:
 }}
 
 Rules:
-- Give detailed and useful feedback.
-- Return at least 8 improved bullet points if possible.
-- Improve bullets from projects, internships, experience, and achievements.
+- Give 6 to 8 improved bullet points.
+- Improve project, internship, and experience bullets.
+
+- Use strong action verbs.
 - Make every improved bullet stronger, quantified, and ATS-friendly.
-- Use strong action verbs like Developed, Built, Implemented, Optimized, Designed, Integrated.
--Add measurable impact where possible.
--Keep the output professional and recruiter-friendly.
+- Add measurable impact where possible.
+
+-Keep output concise.
 -Do not include markdown.
 -Do not include extra text outside JSON.
 
 
 Resume:
-{text}
+{text[:6000]}
 """
 
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.5-flash-lite",
                 contents=prompt
             )
 
