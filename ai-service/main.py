@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, UploadFile, File
 from dotenv import load_dotenv
 from pypdf import PdfReader
-import google.generativeai as genai
+from google import genai
 from fastapi.responses import StreamingResponse
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
@@ -44,9 +44,10 @@ ROLE_SKILLS = {
 load_dotenv()
 
 # Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY", "").strip())
+# Configure Gemini
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 
-model = genai.GenerativeModel("gemini-2.5-flash")
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 app = FastAPI()
 
@@ -150,15 +151,10 @@ def check_env():
 @app.get("/test-ai")
 def test_ai():
     try:
-        key = os.getenv("GEMINI_API_KEY","").strip()
-        genai.configure(api_key=key)
-        if not key:
-            return {
-                "success": False,
-                "error": "GEMINI_API_KEY not found in environment"
-            }
-
-        response = model.generate_content("Say hello in one sentence.")
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents="Say hello in one sentence."
+        )
 
         return {
             "success": True,
@@ -170,7 +166,6 @@ def test_ai():
             "success": False,
             "error": str(e)
         }
-
 
 # -------------------------
 # Extract PDF Text
@@ -232,7 +227,10 @@ Resume:
 {text}
 """
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=prompt
+)
 
     raw_text = response.text.strip()
     cleaned = raw_text.replace("```json", "").replace("```", "").strip()
@@ -310,7 +308,10 @@ Resume:
 {text}
 """
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=prompt
+)
 
     raw_text = response.text.strip()
     cleaned = raw_text.replace("```json", "").replace("```", "").strip()
@@ -422,7 +423,10 @@ Job Description:
 {job_description}
 """
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=prompt
+)
 
     raw_text = response.text.strip()
     cleaned = raw_text.replace("```json", "").replace("```", "").strip()
