@@ -219,6 +219,76 @@ def match_roles(text: str):
 
     return sorted_roles
 
+def rule_based_jd_match(resume_text: str, job_description: str):
+    resume_lower = resume_text.lower()
+    jd_lower = job_description.lower()
+
+    keywords = [
+        "react", "next.js", "next", "javascript", "typescript",
+        "html", "css", "redux", "redux toolkit", "context api",
+        "hooks", "responsive", "mobile-first", "restful api",
+        "graphql", "seo", "performance", "web vitals",
+        "git", "testing", "debugging", "component-based",
+        "ssr", "ssg"
+    ]
+
+    jd_keywords = []
+    matching_skills = []
+    missing_keywords = []
+
+    for keyword in keywords:
+        if keyword in jd_lower:
+            jd_keywords.append(keyword)
+
+            if keyword in resume_lower:
+                matching_skills.append(keyword)
+            else:
+                missing_keywords.append(keyword)
+
+    if len(jd_keywords) == 0:
+        match_score = 0
+    else:
+        match_score = round((len(matching_skills) / len(jd_keywords)) * 100, 2)
+
+    improvement_tips = []
+
+    if missing_keywords:
+        improvement_tips.append(
+            "Add missing JD keywords naturally in your Skills, Projects, or Experience sections."
+        )
+
+    if "typescript" in missing_keywords:
+        improvement_tips.append(
+            "Add TypeScript experience if you have worked with typed JavaScript projects."
+        )
+
+    if "next.js" in missing_keywords or "next" in missing_keywords:
+        improvement_tips.append(
+            "Mention Next.js, SSR, or SSG experience if relevant to your projects."
+        )
+
+    if "redux" in missing_keywords or "redux toolkit" in missing_keywords:
+        improvement_tips.append(
+            "Add Redux or Redux Toolkit if you have used state management in React applications."
+        )
+
+    if "performance" in missing_keywords or "web vitals" in missing_keywords:
+        improvement_tips.append(
+            "Mention performance optimization, lazy loading, code splitting, or web vitals if applicable."
+        )
+
+    if not improvement_tips:
+        improvement_tips.append(
+            "Your resume matches several important JD keywords. Add measurable impact to strengthen it further."
+        )
+
+    return {
+        "match_score": match_score,
+        "matching_skills": matching_skills,
+        "missing_keywords": missing_keywords,
+        "improvement_tips": improvement_tips
+    }
+
 
 # -------------------------
 # Health Check
@@ -637,14 +707,8 @@ Job Description:
         except Exception as gemini_error:
             print("JD Match Gemini Error:", gemini_error)
 
-            return {
-                "match_score": 0,
-                "matching_skills": [],
-                "missing_keywords": [],
-                "improvement_tips": [
-                    "Could not generate AI-based job description match. Please try again."
-                ]
-            }
+            return rule_based_jd_match(resume_text, job_description)
+            
 
     except Exception as error:
         print("JD Match Error:", error)
