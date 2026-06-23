@@ -363,11 +363,16 @@ Format:
 }}
 
 Rules:
-- Make bullets more impactful.
-- Add measurable impact where possible.
-- Keep it professional and concise.
-- Do not include markdown.
-- Do not include extra text outside JSON.
+- Give detailed and useful feedback.
+- Return at least 8 improved bullet points if possible.
+- Improve bullets from projects, internships, experience, and achievements.
+- Make every improved bullet stronger, quantified, and ATS-friendly.
+- Use strong action verbs like Developed, Built, Implemented, Optimized, Designed, Integrated.
+-Add measurable impact where possible.
+-Keep the output professional and recruiter-friendly.
+-Do not include markdown.
+-Do not include extra text outside JSON.
+
 
 Resume:
 {text}
@@ -375,7 +380,7 @@ Resume:
 
         try:
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 contents=prompt
             )
 
