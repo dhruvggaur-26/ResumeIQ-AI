@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from io import BytesIO
 from html import escape
 
@@ -101,6 +102,33 @@ def clean_gemini_json(raw_text: str):
     cleaned = cleaned.strip()
 
     return json.loads(cleaned)
+
+def generate_gemini_json_with_retry(prompt: str):
+    models = [
+        "gemini-2.0-flash",
+        "gemini-2.5-flash",
+    ]
+
+    last_error = None
+
+    for model_name in models:
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
+
+                raw_text = response.text if response.text else ""
+                return clean_gemini_json(raw_text)
+
+            except Exception as error:
+                last_error = error
+                print(f"Gemini error with {model_name}, attempt {attempt + 1}:", error)
+
+                time.sleep(2)
+
+    raise last_error
 
 
 def generate_gemini_json(prompt: str):
@@ -376,19 +404,12 @@ Rules:
 
 
 Resume:
-{text[:6000]}
+{text[:5000]}
 """
 
         try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash-lite",
-                contents=prompt
-            )
-
-            raw_text = response.text if response.text else ""
-            cleaned = raw_text.replace("```json", "").replace("```", "").strip()
-
-            return json.loads(cleaned)
+            return generate_gemini_json_with_retry(prompt)
+            
 
         except Exception as gemini_error:
             print("Improve Resume Gemini Error:", gemini_error)
