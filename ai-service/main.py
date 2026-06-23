@@ -394,7 +394,7 @@ Resume:
             print("Improve Resume Gemini Error:", gemini_error)
 
             return {
-                "overall_feedback": "Gemini is temporarily busy, but ResumeIQ generated fallback improvement guidance based on ATS best practices.",
+                "overall_feedback":f"Gemini failed. Error: {str(gemini_error)}",
                 "improved_bullets": [
                     {
                         "original": "Built projects using web technologies.",
