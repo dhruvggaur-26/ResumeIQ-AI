@@ -2,6 +2,8 @@ import Navbar from "../components/layout/Navbar";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
 
+
+const API_URL = "https://resumeiq-ai-backend.onrender.com";
 const Result = () => {
   const location = useLocation();
 
@@ -37,12 +39,12 @@ const [jdLoading, setJdLoading] = useState(false);
 
 const handleJobMatch = async () => {
   if (!file) {
-    alert("Resume file not found");
+    alert("Resume file not found. Please upload again.");
     return;
   }
 
   if (!jobDescription.trim()) {
-    alert("Please paste a job description");
+    alert("Please paste a job description first.");
     return;
   }
 
@@ -53,21 +55,23 @@ const handleJobMatch = async () => {
   try {
     setJdLoading(true);
 
-    const response = await fetch(
-      "http://127.0.0.1:8000/match-job-description",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    const response = await fetch(`${API_URL}/match-job-description`, {
+      method: "POST",
+      body: formData,
+    });
 
     const data = await response.json();
 
-    console.log("JD Match:", data);
+    console.log("JD Match Response:", data);
+
+    if (!response.ok || data.success === false) {
+      alert(data.error || "Failed to match job description");
+      return;
+    }
 
     setJdResult(data);
   } catch (error) {
-    console.error(error);
+    console.error("JD Match Error:", error);
     alert("Failed to match job description");
   } finally {
     setJdLoading(false);
@@ -118,23 +122,29 @@ const handleJobMatch = async () => {
 
   const handleDownloadReport = async () => {
   try {
-    const response = await fetch(
-   "https://resumeiq-ai-backend.onrender.com",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ats_score: result?.ats_score,
-          best_role: result?.recommended_roles?.[0],
-          strengths: analysis?.strengths,
-          weaknesses: analysis?.weaknesses,
-          missing_skills: analysis?.missing_skills,
-          suggestions: analysis?.suggestions,
-        }),
-      }
-    );
+    const response = await fetch(`${API_URL}/generate-report`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ats_score: result?.ats_score,
+        best_role: result?.recommended_roles?.[0],
+        strengths: analysis?.strengths || [],
+        weaknesses: analysis?.weaknesses || [],
+        missing_skills: analysis?.missing_skills || [],
+        suggestions: analysis?.suggestions || [],
+      }),
+    });
+
+    const contentType = response.headers.get("content-type");
+
+    if (!response.ok || !contentType?.includes("application/pdf")) {
+      const errorText = await response.text();
+      console.error("PDF Report Error:", errorText);
+      alert("PDF report generation failed. Check console.");
+      return;
+    }
 
     const blob = await response.blob();
 
@@ -143,11 +153,13 @@ const handleJobMatch = async () => {
     const a = document.createElement("a");
     a.href = url;
     a.download = "ResumeIQ_Report.pdf";
+    document.body.appendChild(a);
     a.click();
+    a.remove();
 
     window.URL.revokeObjectURL(url);
   } catch (error) {
-    console.error(error);
+    console.error("Download Report Error:", error);
     alert("Failed to download report");
   }
 };
