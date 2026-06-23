@@ -21,7 +21,6 @@ from reportlab.lib.styles import getSampleStyleSheet
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 
@@ -82,7 +81,6 @@ ROLE_SKILLS = {
 # -------------------------
 async def extract_pdf_text_from_upload(file: UploadFile) -> str:
     pdf_bytes = await file.read()
-
     reader = PdfReader(BytesIO(pdf_bytes))
 
     text = ""
@@ -95,57 +93,87 @@ async def extract_pdf_text_from_upload(file: UploadFile) -> str:
     return text.strip()
 
 
-def clean_gemini_json(raw_text: str):
+def extract_json_from_text(raw_text: str):
+    """
+    Gemini sometimes returns JSON with code fences or small extra text.
+    This function cleans it and extracts JSON safely.
+    """
+    if not raw_text:
+        raise ValueError("Empty Gemini response")
+
     cleaned = raw_text.strip()
     cleaned = cleaned.replace("```json", "")
     cleaned = cleaned.replace("```", "")
     cleaned = cleaned.strip()
 
-    return json.loads(cleaned)
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
 
-def generate_gemini_json_with_retry(prompt: str):
+        if start == -1 or end == -1:
+            raise ValueError("No JSON object found in Gemini response")
+
+        json_part = cleaned[start:end + 1]
+        return json.loads(json_part)
+
+
+def generate_gemini_json(prompt: str, model_name: str = "gemini-2.5-flash"):
+    response = client.models.generate_content(
+        model=model_name,
+        contents=prompt
+    )
+
+    raw_text = response.text if response.text else ""
+    return extract_json_from_text(raw_text)
+
+
+def generate_gemini_json_with_retry(prompts):
+    """
+    Tries smaller/lighter models first.
+    If Gemini is overloaded, it retries instead of instantly falling back.
+    """
+    if isinstance(prompts, str):
+        prompts = [prompts]
+
     models = [
+        "gemini-2.5-flash-lite",
+        "gemini-2.0-flash-lite",
         "gemini-2.0-flash",
         "gemini-2.5-flash",
     ]
 
     last_error = None
 
-    for model_name in models:
-        for attempt in range(3):
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
-                )
+    for prompt in prompts:
+        for model_name in models:
+            for attempt in range(2):
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt
+                    )
 
-                raw_text = response.text if response.text else ""
-                return clean_gemini_json(raw_text)
+                    raw_text = response.text if response.text else ""
+                    return extract_json_from_text(raw_text)
 
-            except Exception as error:
-                last_error = error
-                print(f"Gemini error with {model_name}, attempt {attempt + 1}:", error)
-
-                time.sleep(2)
+                except Exception as error:
+                    last_error = error
+                    print(
+                        f"Gemini error | model={model_name} | "
+                        f"attempt={attempt + 1} | error={error}"
+                    )
+                    time.sleep(1)
 
     raise last_error
-
-
-def generate_gemini_json(prompt: str):
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
-
-    raw_text = response.text if response.text else ""
-
-    return clean_gemini_json(raw_text)
 
 
 def calculate_rule_based_score(text: str):
     text_lower = text.lower()
 
     skill_matches = 0
+
     for skill in SKILL_KEYWORDS:
         if skill in text_lower:
             skill_matches += 1
@@ -296,7 +324,7 @@ Rules:
 - Do not include extra text outside JSON.
 
 Resume:
-{text}
+{text[:7000]}
 """
 
         try:
@@ -370,10 +398,8 @@ async def improve_resume(file: UploadFile = File(...)):
                 ]
             }
 
-        prompt = f"""
+        main_prompt = f"""
 You are a professional resume coach and ATS optimizer.
-
-Improve the following resume.
 
 Return ONLY valid JSON.
 
@@ -391,31 +417,59 @@ Format:
 }}
 
 Rules:
-- Give 6 to 8 improved bullet points.
+- Give 5 to 7 improved bullet points.
 - Improve project, internship, and experience bullets.
-
 - Use strong action verbs.
-- Make every improved bullet stronger, quantified, and ATS-friendly.
+- Make bullets ATS-friendly.
 - Add measurable impact where possible.
-
--Keep output concise.
--Do not include markdown.
--Do not include extra text outside JSON.
-
+- Keep output concise.
+- No markdown.
+- No extra text outside JSON.
 
 Resume:
-{text[:5000]}
+{text[:3500]}
+"""
+
+        compact_prompt = f"""
+Return ONLY valid JSON.
+
+Format:
+{{
+  "overall_feedback": "string",
+  "improved_bullets": [
+    {{
+      "original": "string",
+      "improved": "string"
+    }}
+  ],
+  "ats_improvements": [],
+  "suggestions": []
+}}
+
+Task:
+Improve this resume for ATS and recruiters.
+
+Rules:
+- Give 3 to 5 improved bullet points.
+- Keep output short.
+- No markdown.
+- No extra text outside JSON.
+
+Resume:
+{text[:1800]}
 """
 
         try:
-            return generate_gemini_json_with_retry(prompt)
-            
+            return generate_gemini_json_with_retry([main_prompt, compact_prompt])
 
         except Exception as gemini_error:
             print("Improve Resume Gemini Error:", gemini_error)
 
             return {
-                "overall_feedback":f"Gemini failed. Error: {str(gemini_error)}",
+                "overall_feedback": (
+                    "Gemini is temporarily busy, so ResumeIQ generated fallback "
+                    "improvement guidance based on ATS best practices."
+                ),
                 "improved_bullets": [
                     {
                         "original": "Built projects using web technologies.",
@@ -424,6 +478,14 @@ Resume:
                     {
                         "original": "Worked on resume analysis project.",
                         "improved": "Implemented an AI-powered resume analysis workflow that extracts PDF text, calculates ATS scores, detects missing skills, and generates personalized improvement suggestions."
+                    },
+                    {
+                        "original": "Created frontend pages.",
+                        "improved": "Designed responsive React interfaces with Tailwind CSS to provide a smooth resume upload, analysis, and reporting experience."
+                    },
+                    {
+                        "original": "Used AI in project.",
+                        "improved": "Integrated Gemini AI with FastAPI to generate resume feedback, missing skill analysis, and job description matching insights."
                     }
                 ],
                 "ats_improvements": [
@@ -563,14 +625,14 @@ Rules:
 - Do not include extra text outside JSON.
 
 Resume:
-{resume_text}
+{resume_text[:6000]}
 
 Job Description:
-{job_description}
+{job_description[:3000]}
 """
 
         try:
-            return generate_gemini_json(prompt)
+            return generate_gemini_json_with_retry(prompt)
 
         except Exception as gemini_error:
             print("JD Match Gemini Error:", gemini_error)
