@@ -223,32 +223,43 @@ def rule_based_jd_match(resume_text: str, job_description: str):
     resume_lower = resume_text.lower()
     jd_lower = job_description.lower()
 
-    keywords = [
-        "react", "next.js", "next", "javascript", "typescript",
-        "html", "css", "redux", "redux toolkit", "context api",
-        "hooks", "responsive", "mobile-first", "restful api",
-        "graphql", "seo", "performance", "web vitals",
-        "git", "testing", "debugging", "component-based",
-        "ssr", "ssg"
-    ]
+    keyword_groups = {
+        "React.js": ["react", "react.js"],
+        "Next.js": ["next.js", "nextjs", "next"],
+        "JavaScript": ["javascript", "js"],
+        "TypeScript": ["typescript"],
+        "SQL": ["sql", "mysql", "postgresql", "database"],
+        "HTML": ["html", "html5"],
+        "CSS": ["css", "css3"],
+        "Redux": ["redux", "redux toolkit"],
+        "Responsive Design": ["responsive", "mobile-first"],
+        "Performance Optimization": ["performance", "optimization", "lazy loading", "code splitting"],
+        "REST API": ["rest", "restful api", "api"],
+        "Git": ["git", "github"],
+        "Frontend Development": ["frontend", "front-end", "ui components"],
+    }
 
-    jd_keywords = []
+    required_keywords = []
     matching_skills = []
     missing_keywords = []
 
-    for keyword in keywords:
-        if keyword in jd_lower:
-            jd_keywords.append(keyword)
+    for skill, variants in keyword_groups.items():
+        is_required_in_jd = any(variant in jd_lower for variant in variants)
 
-            if keyword in resume_lower:
-                matching_skills.append(keyword)
+        if is_required_in_jd:
+            required_keywords.append(skill)
+
+            is_present_in_resume = any(variant in resume_lower for variant in variants)
+
+            if is_present_in_resume:
+                matching_skills.append(skill)
             else:
-                missing_keywords.append(keyword)
+                missing_keywords.append(skill)
 
-    if len(jd_keywords) == 0:
+    if len(required_keywords) == 0:
         match_score = 0
     else:
-        match_score = round((len(matching_skills) / len(jd_keywords)) * 100, 2)
+        match_score = round((len(matching_skills) / len(required_keywords)) * 100, 2)
 
     improvement_tips = []
 
@@ -257,24 +268,24 @@ def rule_based_jd_match(resume_text: str, job_description: str):
             "Add missing JD keywords naturally in your Skills, Projects, or Experience sections."
         )
 
-    if "typescript" in missing_keywords:
+    if "Next.js" in missing_keywords:
+        improvement_tips.append(
+            "Mention Next.js, SSR, SSG, or routing experience if relevant to your projects."
+        )
+
+    if "SQL" in missing_keywords:
+        improvement_tips.append(
+            "Add SQL, MySQL, PostgreSQL, or database integration experience if you have worked with databases."
+        )
+
+    if "Performance Optimization" in missing_keywords:
+        improvement_tips.append(
+            "Mention performance optimization, lazy loading, code splitting, caching, or web vitals if applicable."
+        )
+
+    if "TypeScript" in missing_keywords:
         improvement_tips.append(
             "Add TypeScript experience if you have worked with typed JavaScript projects."
-        )
-
-    if "next.js" in missing_keywords or "next" in missing_keywords:
-        improvement_tips.append(
-            "Mention Next.js, SSR, or SSG experience if relevant to your projects."
-        )
-
-    if "redux" in missing_keywords or "redux toolkit" in missing_keywords:
-        improvement_tips.append(
-            "Add Redux or Redux Toolkit if you have used state management in React applications."
-        )
-
-    if "performance" in missing_keywords or "web vitals" in missing_keywords:
-        improvement_tips.append(
-            "Mention performance optimization, lazy loading, code splitting, or web vitals if applicable."
         )
 
     if not improvement_tips:
