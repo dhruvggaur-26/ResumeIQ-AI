@@ -151,5 +151,5 @@ Dhruv Gaur
 
 ## Live Demo
 
-Frontend: <add-your-frontend-live-link>  
-Backend: <add-your-backend-live-link>
+Frontend:resume-iq-riaqtdw81-dhruvggaur-26s-projects.vercel.app  
+Backend:https://resumeiq-ai-backend.onrender.com
